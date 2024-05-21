@@ -1,7 +1,7 @@
 const spam = require('./../db/models/spam');
+const catchAsync = require('../utils/catchAsync');
 
-const markSpam = async(req,res)=>{
-    try{
+const markSpam = catchAsync(async(req,res,next)=>{
         const {phone} = req.body;
         const {id} = req.user;
         let update = null;
@@ -12,23 +12,10 @@ const markSpam = async(req,res)=>{
         }else{
             update = await spam.create({phone:phone,marked_by:id,count:1})
         }
-        if(update){
             return res.status(200).json({
                 status: 'success',
                 data: update,
             });
-        }
-        return res.status(200).json({
-            status: 'fail',
-            message:"Interal server error",
         });
-    }catch(error){
-        console.error(error.message)
-        return res.status(500).json({
-            status: 'error',
-            message: error.message,
-        });
-    }
-}
 
-module.exports = {markSpam}
+module.exports = {markSpam};

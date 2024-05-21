@@ -2,50 +2,15 @@ const { Op,Sequelize, where } = require('sequelize');
 const Contacts = require('./../db/models/contacts');
 const User = require('../db/models/user');
 const Spam = require('../db/models/spam');
-
-
-const search = async(req,res)=>{
-    try{
-      const   {phone,name,pageNum=1,pageSize=10} = req.query;
-      if(!phone &&!name){
-        throw new Error('need phone or name');
-      }
-    //   console.log(phone,name)
-      let search_arr = [];
-      if(phone){
-        search_arr.push({phone:{ [Op.like]: `%${phone}%` }})
-      };
-      if(name){
-        search_arr.push({name:{ [Op.like]: `%${name}%` }} )
-      };
-      const search_results = await contacts.findAll({
-        where: {
-            [Op.or]: search_arr
-          },
-          include:user
-      });
-      return res.status(200).json({
-        status: 'success',
-        data: search_results,
-    });
-    }catch(error){
-        console.error(error.message)
-        return res.status(500).json({
-            status: 'error',
-            message: error.message,
-        });
-    }
-};
-
+const catchAsync = require('../utils/catchAsync');
 
 // Search by Name endpoint
-const searchByName = async (req, res) => {
+const searchByName = catchAsync(async (req, res,next) => {
   const { query } = req.query;
 
   if (!query) {
     return res.status(400).json({ message: 'Missing search query' });
   }
-  try {
     // Search Users
     const users = await User.findAll({
       where: {
@@ -98,14 +63,10 @@ const searchByName = async (req, res) => {
         spam_likelihood: result.spam_likelihood, // Explicitly include
       })),
     });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-};
+});
 
 //Search by Phone endpoint
-const searchByPhone = async (req, res) => {
+const searchByPhone = catchAsync(async (req, res,next) => {
   const { phone } = req.query;
   const loggedInUserId = req.user?.id; 
 
@@ -113,7 +74,6 @@ const searchByPhone = async (req, res) => {
     return res.status(400).json({ message: 'Missing phone number' });
   }
 
-  try {
     // Search for registered user with phone number
     const user = await User.findOne({
       where: { phone:phone },
@@ -148,13 +108,9 @@ const searchByPhone = async (req, res) => {
         spam_likelihood: result.spam_likelihood, // Explicitly include
       })),
     });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-};
+});
 
-module.exports = {search,searchByName,searchByPhone};
+module.exports = {searchByName,searchByPhone};
 
 
 // Function to get spam likelihood for a phone number
